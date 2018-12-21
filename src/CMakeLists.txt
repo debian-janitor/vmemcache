@@ -52,7 +52,8 @@ set(SOURCES
 	vmemcache.c
 	vmemcache_heap.c
 	vmemcache_index.c
-	vmemcache_repl.c)
+	vmemcache_repl.c
+	visual.c)
 
 add_library(vmemcache SHARED ${SOURCES})
 target_link_libraries(vmemcache PRIVATE

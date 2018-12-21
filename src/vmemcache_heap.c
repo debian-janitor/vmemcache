@@ -35,6 +35,7 @@
  */
 
 #include "vmemcache_heap.h"
+#include "visual.h"
 #include "sys_util.h"
 
 #define GUARD_SIZE ((uintptr_t)0x1000) /* 4096 bytes */
@@ -530,7 +531,7 @@ vmcache_heap_merge(struct heap *heap, struct extent *ext,
  * vmcache_free -- free memory (give it back to the queue)
  */
 void
-vmcache_free(struct heap *heap, ptr_ext_t *first_extent)
+vmcache_free(VMEMcache *cache, struct heap *heap, ptr_ext_t *first_extent)
 {
 	LOG(3, "heap %p first_extent %p", heap, first_extent);
 
@@ -548,6 +549,7 @@ vmcache_free(struct heap *heap, ptr_ext_t *first_extent)
 	EXTENTS_FOREACH_SAFE(ext, first_extent, __next) {
 		/* size without headers */
 		freed += ext.size;
+		vmemcache_visual_draw(cache, ext.ptr, ext.size, 0);
 
 		struct heap_entry he;
 		vmcache_heap_merge(heap, &ext, &he);

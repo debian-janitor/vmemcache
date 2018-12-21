@@ -47,6 +47,7 @@
 #include "vmemcache_index.h"
 #include "vmemcache_repl.h"
 #include "valgrind_internal.h"
+#include "visual.h"
 
 /*
  * Arguments to currently running get request, during a callback.
@@ -311,11 +312,12 @@ vmemcache_delete(VMEMcache *cache)
  *                                  to heap entries
  */
 static void
-vmemcache_populate_extents(struct cache_entry *entry,
-				const void *value, size_t value_size)
+vmemcache_populate_extents(VMEMcache *cache, struct cache_entry *entry,
+				const char *value, size_t value_size)
 {
 	struct extent ext;
 	size_t size_left = value_size;
+	uint64_t id = vmemcache_visual_id(entry);
 
 	EXTENTS_FOREACH(ext, entry->value.extents) {
 		ASSERT(size_left > 0);
@@ -323,6 +325,7 @@ vmemcache_populate_extents(struct cache_entry *entry,
 		memcpy(ext.ptr, value, len);
 		value = (char *)value + len;
 		size_left -= len;
+		vmemcache_visual_draw(cache, ext.ptr, len, id);
 	}
 
 	entry->value.vsize = value_size;
@@ -406,7 +409,7 @@ vmemcache_put(VMEMcache *cache, const void *key, size_t ksize,
 	if (cache->no_memcpy)
 		entry->value.vsize = value_size;
 	else
-		vmemcache_populate_extents(entry, value, value_size);
+		vmemcache_populate_extents(cache, entry, value, value_size);
 
 put_index:
 	if (vmcache_index_insert(cache->index, entry)) {
@@ -422,7 +425,7 @@ put_index:
 	return 0;
 
 error_exit:
-	vmcache_free(cache->heap, entry->value.extents);
+	vmcache_free(cache, cache->heap, entry->value.extents);
 
 	Free(entry);
 
@@ -506,7 +509,7 @@ vmemcache_entry_release(VMEMcache *cache, struct cache_entry *entry)
 	VALGRIND_ANNOTATE_HAPPENS_AFTER(&entry->value.refcount);
 	VALGRIND_ANNOTATE_HAPPENS_BEFORE_FORGET_ALL(&entry->value.refcount);
 
-	vmcache_free(cache->heap, entry->value.extents);
+	vmcache_free(cache, cache->heap, entry->value.extents);
 
 	Free(entry);
 }

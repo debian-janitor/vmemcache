@@ -48,6 +48,7 @@ LIBVMEMCACHE_1.0 {
 		vmemcache_get_stat;
 		vmemcache_bench_set;
 		vmemcache_errormsg;
+		vmemcache_visual_enable;
 	local:
 		*;
 };

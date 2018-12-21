@@ -39,6 +39,7 @@
 
 #include <stddef.h>
 #include <sys/types.h>
+#include "libvmemcache.h"
 
 /* type of the statistics */
 typedef unsigned long long stat_t;
@@ -68,7 +69,7 @@ ssize_t vmcache_alloc(struct heap *heap, size_t size,
 			ptr_ext_t **first_extent,
 			ptr_ext_t **small_extent);
 
-void vmcache_free(struct heap *heap, ptr_ext_t *first_extent);
+void vmcache_free(VMEMcache *cache, struct heap *heap, ptr_ext_t *first_extent);
 
 stat_t vmcache_get_heap_used_size(struct heap *heap);
 stat_t vmcache_get_heap_entries_count(struct heap *heap);

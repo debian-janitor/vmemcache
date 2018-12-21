@@ -164,6 +164,8 @@ const wchar_t *vmemcache_errormsgW(void);
 /* UNSTABLE INTEFACE -- DO NOT USE! */
 void vmemcache_bench_set(VMEMcache *cache, enum vmemcache_bench_cfg cfg,
 	size_t val);
+/* Not meant to be a part of final API. */
+size_t vmemcache_visual_enable();
 
 #ifdef __cplusplus
 }
