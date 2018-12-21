@@ -306,8 +306,8 @@ main(int argc, char *argv[])
 	unsigned cache_size = VMEMCACHE_MIN_POOL;
 	unsigned cache_extent_size = VMEMCACHE_MIN_EXTENT;
 	unsigned nbuffs = 10;
-	unsigned min_size = 128;
-	unsigned max_size = MAX_VALUE_SIZE;
+	unsigned min_size = 512;
+	unsigned max_size = 65536;
 
 	if (argc < 2 || argc > 11) {
 		fprintf(stderr, USAGE_STRING, argv[0], n_threads, ops_count,
@@ -382,6 +382,8 @@ main(int argc, char *argv[])
 	printf("   seed                : %u\n\n", seed);
 
 	srand(seed);
+
+	vmemcache_visual_enable();
 
 	struct buffers *buffs = calloc(nbuffs, sizeof(*buffs));
 	if (buffs == NULL)
