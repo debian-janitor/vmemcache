@@ -211,7 +211,7 @@ vmcache_index_remove(VMEMcache *cache, struct cache_entry *entry)
 		util_mutex_unlock(&c->lock);
 		ERR(
 			"vmcache_index_remove: cannot find an element with the given key in the index");
-		errno = EINVAL;
+		errno = ENOENT;
 		return -1;
 	}
 

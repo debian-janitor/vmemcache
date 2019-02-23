@@ -107,7 +107,7 @@ vmemcache_newU(const char *dir, size_t max_size, size_t fragment_size,
 			ERR(
 				"error: maximum cache size (%zu) is bigger than the size of the DAX device (%li)",
 				max_size, size);
-			errno = EINVAL;
+			errno = ENOSPC;
 			goto error_free_cache;
 		}
 
