@@ -55,7 +55,7 @@
 #define NIB ((1 << SLICE) - 1)
 #define SLNODES (1 << SLICE)
 
-#define KEYLEN(leaf) (leaf->key.ksize + sizeof(size_t))
+#define KEYLEN(leaf) (leaf->key.ksize)
 
 typedef uint32_t byten_t;
 typedef unsigned char bitn_t;

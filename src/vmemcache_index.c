@@ -128,7 +128,7 @@ vmcache_index_delete(struct index *index, delete_entry_t del_entry)
 int
 vmcache_index_insert(struct index *index, struct cache_entry *entry)
 {
-	struct critnib *c = shard(index, entry->key.ksize, entry->key.key);
+	struct critnib *c = shard(index, entry->key.ksize - sizeof(size_t), entry->key.key);
 
 	util_rwlock_wrlock(&c->lock);
 
@@ -172,7 +172,7 @@ vmcache_index_get(struct index *index, const void *key, size_t ksize,
 		e = alloca(sizeof(struct cache_entry) + ksize);
 	}
 
-	e->key.ksize = ksize;
+	e->key.ksize = ksize + sizeof(size_t);
 	memcpy(e->key.key, key, ksize);
 
 	util_rwlock_rdlock(&c->lock);
@@ -201,7 +201,7 @@ vmcache_index_get(struct index *index, const void *key, size_t ksize,
 int
 vmcache_index_remove(VMEMcache *cache, struct cache_entry *entry)
 {
-	struct critnib *c = shard(cache->index, entry->key.ksize,
+	struct critnib *c = shard(cache->index, entry->key.ksize - sizeof(size_t),
 		entry->key.key);
 
 	util_rwlock_wrlock(&c->lock);

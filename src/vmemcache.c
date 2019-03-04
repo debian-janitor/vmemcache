@@ -279,7 +279,7 @@ vmemcache_put(VMEMcache *cache, const void *key, size_t ksize,
 
 	util_fetch_and_add64(&cache->size_DRAM, malloc_usable_size(entry));
 
-	entry->key.ksize = ksize;
+	entry->key.ksize = ksize + sizeof(size_t);
 	memcpy(entry->key.key, key, ksize);
 
 	if (cache->index_only || cache->no_alloc)
@@ -504,7 +504,7 @@ vmemcache_evict(VMEMcache *cache, const void *key, size_t ksize)
 
 			evicted_from_repl_p = 1;
 			key = entry->key.key;
-			ksize = entry->key.ksize;
+			ksize = entry->key.ksize - sizeof(size_t);
 
 		} while (!__sync_bool_compare_and_swap(&entry->value.evicting,
 							0, 1));
