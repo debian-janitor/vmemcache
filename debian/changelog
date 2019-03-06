@@ -1,0 +1,5 @@
+vmemcache (0.8-1) unstable; urgency=medium
+
+  * Initial release (Closes: #925980)
+
+ -- Adam Borowski <kilobyte@angband.pl>  Fri, 29 Mar 2019 19:00:34 +0100

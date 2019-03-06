@@ -1,0 +1,16 @@
+libvmemcache.so.0 libvmemcache0 #MINVER#
+ LIBVMEMCACHE_1.0@LIBVMEMCACHE_1.0 0
+ vmemcache_add@LIBVMEMCACHE_1.0 0
+ vmemcache_bench_set@LIBVMEMCACHE_1.0 0
+ vmemcache_callback_on_evict@LIBVMEMCACHE_1.0 0
+ vmemcache_callback_on_miss@LIBVMEMCACHE_1.0 0
+ vmemcache_delete@LIBVMEMCACHE_1.0 0
+ vmemcache_errormsg@LIBVMEMCACHE_1.0 0
+ vmemcache_evict@LIBVMEMCACHE_1.0 0
+ vmemcache_get@LIBVMEMCACHE_1.0 0
+ vmemcache_get_stat@LIBVMEMCACHE_1.0 0
+ vmemcache_new@LIBVMEMCACHE_1.0 0
+ vmemcache_put@LIBVMEMCACHE_1.0 0
+ vmemcache_set_eviction_policy@LIBVMEMCACHE_1.0 0
+ vmemcache_set_extent_size@LIBVMEMCACHE_1.0 0
+ vmemcache_set_size@LIBVMEMCACHE_1.0 0

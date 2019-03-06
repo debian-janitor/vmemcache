@@ -1,0 +1,32 @@
+Source: vmemcache
+Priority: optional
+Maintainer: Adam Borowski <kilobyte@angband.pl>
+Build-Depends: debhelper (>= 11), cmake, valgrind, pkg-config, pandoc
+Standards-Version: 4.3.0
+Section: libs
+Homepage: https://github.com/pmem/vmemcache
+Vcs-Browser: https://github.com/kilobyte/vmemcache/tree/debian
+Vcs-Git: https://github.com/kilobyte/vmemcache -b debian
+
+Package: libvmemcache-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libvmemcache0 (= ${binary:Version}), ${misc:Depends}
+Description: buffer-based LRU cache
+ Vmemcache is a volatile filesystem based key:value cache.  It works best
+ when backed with a DAX-capable persistent memory device, but can work on
+ tmpfs or on legacy disks.
+ .
+ This package contains development headers and documentation.
+
+Package: libvmemcache0
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: buffer-based LRU cache
+ Vmemcache is a volatile filesystem based key:value cache.  It works best
+ when backed with a DAX-capable persistent memory device, but can work on
+ tmpfs or on legacy disks.
+ .
+ This package contains the runtime library.
