@@ -36,6 +36,9 @@
 
 #include <sys/mman.h>
 #include <errno.h>
+#include <malloc.h>
+#include <stddef.h>
+#include <pthread.h>
 
 #include "out.h"
 #include "file.h"
@@ -280,6 +283,61 @@ error_unmap:
 }
 
 /*
+ * vmemcache_record_dump -- (internal) write out the operation log
+ */
+static void
+vmemcache_record_dump(VMEMcache *cache)
+{
+	char *buf = cache->record_buf;
+	if (!buf)
+		return;
+	cache->record_buf = NULL;
+
+	size_t len = cache->record_len;
+	if (len > RECORD_BUF_LEN)
+		len = RECORD_BUF_LEN; /* some was lost */
+
+	FILE *f = fopen("vmemcache.record", "w");
+	fwrite(buf, 1, len, f);
+	fclose(f);
+
+	Free(buf);
+}
+
+/*
+ * vmemcache_record -- (internal) append to the log
+ */
+static void
+vmemcache_record(VMEMcache *cache, char op, const void *key, size_t ksize,
+	size_t vsize)
+{
+	struct lent {
+		uintptr_t thread_id;
+		size_t ksize, vsize;
+		char op;
+	} lent;
+
+	char *buf = cache->record_buf;
+	if (!buf)
+		return;
+
+	const size_t fixed_len = offsetof(struct lent, op) + sizeof(lent.op);
+	size_t len = fixed_len + ksize;
+
+	lent.thread_id = (uintptr_t)pthread_self(); /* castable on glibc... */
+	lent.ksize = ksize;
+	lent.vsize = vsize;
+	lent.op = op;
+
+	size_t off = util_fetch_and_add64(&cache->record_len, len);
+	if (off + len >= RECORD_BUF_LEN)
+		return; /* leave last partial entry as all-zeroes */
+
+	memcpy(buf + off, &lent, fixed_len);
+	memcpy(buf + off + fixed_len, key, ksize);
+}
+
+/*
  * vmemcache_delete_entry_cb -- callback deleting a vmemcache entry
  *                              for vmemcache_delete()
  */
@@ -302,6 +360,7 @@ vmemcache_delete(VMEMcache *cache)
 		vmcache_index_delete(cache->index, vmemcache_delete_entry_cb);
 		vmcache_heap_destroy(cache->heap);
 		util_unmap(cache->addr, cache->size);
+		vmemcache_record_dump(cache);
 	}
 	Free(cache);
 }
@@ -359,6 +418,7 @@ vmemcache_put(VMEMcache *cache, const void *key, size_t ksize,
 {
 	LOG(3, "cache %p key %p ksize %zu value %p value_size %zu",
 		cache, key, ksize, value, value_size);
+	vmemcache_record(cache, 'P', key, ksize, value_size);
 
 	if (get_req.key)
 		vmemcache_put_satisfy_get(key, ksize, value, value_size);
@@ -531,6 +591,8 @@ vmemcache_get(VMEMcache *cache, const void *key, size_t ksize, void *vbuf,
 		return -1;
 
 	if (entry == NULL) { /* cache miss */
+		vmemcache_record(cache, 'M', key, ksize, 0);
+
 		if (cache->on_miss) {
 			get_req.key = key;
 			get_req.ksize = ksize;
@@ -566,6 +628,8 @@ vmemcache_get(VMEMcache *cache, const void *key, size_t ksize, void *vbuf,
 		cache->no_memcpy);
 	if (vsize)
 		*vsize = entry->value.vsize;
+
+	vmemcache_record(cache, 'G', key, ksize, entry->value.vsize);
 
 get_index:
 	vmemcache_entry_release(cache, entry);
@@ -773,6 +837,12 @@ vmemcache_bench_set(VMEMcache *cache, enum vmemcache_bench_cfg cfg, size_t val)
 		break;
 	case VMEMCACHE_BENCH_PREFAULT:
 		prefault(cache);
+		break;
+	case VMEMCACHE_RECORD:
+		if (val)
+			cache->record_buf = Malloc(RECORD_BUF_LEN);
+		else
+			vmemcache_record_dump(cache);
 		break;
 	default:
 		ERR("invalid config parameter: %u", cfg);

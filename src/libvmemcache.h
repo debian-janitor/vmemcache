@@ -104,6 +104,8 @@ enum vmemcache_bench_cfg {
 	VMEMCACHE_BENCH_NO_ALLOC,	/* index+repl but no alloc */
 	VMEMCACHE_BENCH_NO_MEMCPY,	/* alloc but don't copy data */
 	VMEMCACHE_BENCH_PREFAULT,	/* prefault the whole pool */
+
+	VMEMCACHE_RECORD,		/* record all gets and puts */
 };
 
 typedef void vmemcache_on_evict(VMEMcache *cache,

@@ -51,6 +51,8 @@ extern "C" {
 #define VMEMCACHE_LEVEL_VAR "VMEMCACHE_LEVEL"
 #define VMEMCACHE_FILE_VAR "VMEMCACHE_FILE"
 
+#define RECORD_BUF_LEN	(32ULL << 30) /* 32GB */
+
 struct index;
 struct repl_p;
 
@@ -70,6 +72,10 @@ struct vmemcache {
 	unsigned index_only:1;		/* bench: disable repl+alloc */
 	unsigned no_alloc:1;		/* bench: disable allocations */
 	unsigned no_memcpy:1;		/* bench: don't copy actual data */
+
+	/* record of operations */
+	uint64_t record_len;		/* recording length used */
+	char *record_buf;		/* unwritten buffer */
 };
 
 struct cache_entry {
