@@ -36,14 +36,17 @@
 
 #include <sys/mman.h>
 #include <errno.h>
+#include <malloc.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "out.h"
 #include "file.h"
-#include "mmap.h"
 
 #include "libvmemcache.h"
 #include "vmemcache.h"
-#include "vmemcache_heap.h"
 #include "vmemcache_index.h"
 #include "vmemcache_repl.h"
 #include "valgrind_internal.h"
@@ -75,7 +78,6 @@ vmemcache_new()
 	}
 
 	cache->repl_p = VMEMCACHE_REPLACEMENT_LRU;
-	cache->extent_size = VMEMCACHE_MIN_EXTENT;
 
 	return cache;
 }
@@ -144,14 +146,6 @@ vmemcache_set_extent_size(VMEMcache *cache, size_t extent_size)
 		return -1;
 	}
 
-	if (extent_size < VMEMCACHE_MIN_EXTENT) {
-		ERR("extent size %zu smaller than %zu bytes",
-			extent_size, VMEMCACHE_MIN_EXTENT);
-		errno = EINVAL;
-		return -1;
-	}
-
-	cache->extent_size = extent_size;
 	return 0;
 }
 
@@ -174,81 +168,11 @@ vmemcache_addU(VMEMcache *cache, const char *dir)
 
 	size_t size = cache->size;
 
-	if (size && cache->extent_size > size) {
-		ERR(
-			"extent size %zu larger than cache size: %zu bytes",
-			cache->extent_size, size);
-		errno = EINVAL;
-		return -1;
-	}
-
 	if (size && size < VMEMCACHE_MIN_POOL) {
 		ERR("cache size %zu smaller than %zu", size,
 			VMEMCACHE_MIN_POOL);
 		errno = EINVAL;
 		return -1;
-	}
-
-	enum file_type type = util_file_get_type(dir);
-	if (type == OTHER_ERROR) {
-		LOG(1, "checking file type failed");
-		return -1;
-	}
-
-	if (type == TYPE_DEVDAX) {
-		const char *devdax = dir;
-		ssize_t dax_size = util_file_get_size(devdax);
-		if (dax_size < 0) {
-			LOG(1, "cannot determine file length \"%s\"", devdax);
-			return -1;
-		}
-
-		if (size != 0 && size > (size_t)dax_size) {
-			ERR(
-				"error: maximum cache size (%zu) is bigger than the size of the DAX device (%zi)",
-				size, dax_size);
-			errno = EINVAL;
-			return -1;
-		}
-
-		if (size == 0) {
-			cache->size = (size_t)dax_size;
-		} else {
-			cache->size = roundup(size, Mmap_align);
-			if (cache->size > (size_t)dax_size)
-				cache->size = (size_t)dax_size;
-		}
-
-		cache->addr = util_file_map_whole(devdax);
-		if (cache->addr == NULL) {
-			LOG(1, "mapping of whole DAX device failed");
-			return -1;
-		}
-
-	} else {
-		/* silently enforce multiple of mapping alignment */
-		cache->size = roundup(cache->size, Mmap_align);
-
-		/* if not set, start with the default */
-		if (!cache->size)
-			cache->size = VMEMCACHE_MIN_POOL;
-
-		/*
-		 * XXX: file should be mapped on-demand during allocation,
-		 *      up to cache->size
-		 */
-		cache->addr = util_map_tmpfile(dir, cache->size, 4 * MEGABYTE);
-		if (cache->addr == NULL) {
-			LOG(1, "mapping of a temporary file failed");
-			return -1;
-		}
-	}
-
-	cache->heap = vmcache_heap_create(cache->addr, cache->size,
-						cache->extent_size);
-	if (cache->heap == NULL) {
-		LOG(1, "heap initialization failed");
-		goto error_unmap;
 	}
 
 	cache->index = vmcache_index_new();
@@ -263,6 +187,12 @@ vmemcache_addU(VMEMcache *cache, const char *dir)
 		goto error_destroy_index;
 	}
 
+	cache->dirfd = open(dir, __O_PATH|O_CLOEXEC|O_DIRECTORY);
+	if (cache->dirfd == -1) {
+		LOG(1, "!open(dir)");
+		goto error_destroy_index;
+	}
+
 	cache->ready = 1;
 
 	return 0;
@@ -271,13 +201,11 @@ error_destroy_index:
 	vmcache_index_delete(cache->index, vmemcache_delete_entry_cb);
 	cache->index = NULL;
 error_destroy_heap:
-	vmcache_heap_destroy(cache->heap);
-	cache->heap = NULL;
-error_unmap:
-	util_unmap(cache->addr, cache->size);
-	cache->addr = NULL;
 	return -1;
 }
+
+static __thread int
+deleting_dirfd;
 
 /*
  * vmemcache_delete_entry_cb -- callback deleting a vmemcache entry
@@ -286,6 +214,9 @@ error_unmap:
 void
 vmemcache_delete_entry_cb(struct cache_entry *entry)
 {
+	char filename[20];
+	snprintf(filename, sizeof(filename), "vmc%llx", entry->value.file_no);
+	unlinkat(deleting_dirfd, filename, 0);
 	Free(entry);
 }
 
@@ -298,34 +229,12 @@ vmemcache_delete(VMEMcache *cache)
 	LOG(3, "cache %p", cache);
 
 	if (cache->ready) {
+		deleting_dirfd = cache->dirfd;
 		repl_p_destroy(cache->repl);
 		vmcache_index_delete(cache->index, vmemcache_delete_entry_cb);
-		vmcache_heap_destroy(cache->heap);
-		util_unmap(cache->addr, cache->size);
+		close(cache->dirfd);
 	}
 	Free(cache);
-}
-
-/*
- * vmemcache_populate_extents -- (internal) copies content of value
- *                                  to heap entries
- */
-static void
-vmemcache_populate_extents(struct cache_entry *entry,
-				const void *value, size_t value_size)
-{
-	struct extent ext;
-	size_t size_left = value_size;
-
-	EXTENTS_FOREACH(ext, entry->value.extents) {
-		ASSERT(size_left > 0);
-		size_t len = (ext.size < size_left) ? ext.size : size_left;
-		memcpy(ext.ptr, value, len);
-		value = (char *)value + len;
-		size_left -= len;
-	}
-
-	entry->value.vsize = value_size;
 }
 
 static void
@@ -377,36 +286,45 @@ vmemcache_put(VMEMcache *cache, const void *key, size_t ksize,
 		return -1;
 	}
 
+	entry->value.file_no = util_fetch_and_add64(&cache->file_no, 1);
+
 	entry->key.ksize = ksize;
 	memcpy(entry->key.key, key, ksize);
 
 	if (cache->index_only || cache->no_alloc)
 		goto put_index;
 
-	ptr_ext_t *small_extent = NULL; /* required by vmcache_alloc() */
-	size_t left_to_allocate = value_size;
+	char filename[20];
+	snprintf(filename, sizeof(filename), "vmc%llx", entry->value.file_no);
 
-	while (left_to_allocate != 0) {
-		ssize_t allocated = vmcache_alloc(cache->heap, left_to_allocate,
-							&entry->value.extents,
-							&small_extent);
-		if (allocated < 0)
-			goto error_exit;
+	int fd = openat(cache->dirfd, filename, O_CREAT|O_TRUNC|O_EXCL
+		|O_CLOEXEC|O_WRONLY, 0666);
+	if (fd == -1) {
+		LOG(1, "!open(write)");
+		goto error_exit;
+	}
 
-		if (allocated == 0 && vmemcache_evict(cache, NULL, 0)) {
+	int err;
+	while ((err = posix_fallocate(fd, 0, (off_t)value_size))) {
+		if (vmemcache_evict(cache, NULL, 0)) {
 			LOG(1, "vmemcache_evict() failed");
 			if (errno == ESRCH)
 				errno = ENOSPC;
 			goto error_exit;
 		}
-
-		left_to_allocate -= MIN((size_t)allocated, left_to_allocate);
 	}
 
-	if (cache->no_memcpy)
-		entry->value.vsize = value_size;
-	else
-		vmemcache_populate_extents(entry, value, value_size);
+	entry->value.vsize = value_size;
+
+	if (write(fd, value, value_size) != (ssize_t)value_size) {
+		ERR("!write");
+		int err = errno;
+		close(fd);
+		errno = err;
+		goto error_exit;
+	}
+
+	close(fd);
 
 put_index:
 	if (vmcache_index_insert(cache->index, entry)) {
@@ -422,8 +340,6 @@ put_index:
 	return 0;
 
 error_exit:
-	vmcache_free(cache->heap, entry->value.extents);
-
 	Free(entry);
 
 	return -1;
@@ -435,48 +351,33 @@ error_exit:
  *                              from the 'offset'
  */
 static size_t
-vmemcache_populate_value(void *vbuf, size_t vbufsize, size_t offset,
+vmemcache_populate_value(int dirfd, void *vbuf, size_t vbufsize, size_t offset,
 				struct cache_entry *entry, int no_memcpy)
 {
 	if (!vbuf || offset >= entry->value.vsize)
 		return 0;
 
-	size_t left_to_copy = entry->value.vsize - offset;
-	struct extent ext;
-	size_t copied = 0;
+	char filename[20];
+	snprintf(filename, sizeof(filename), "vmc%llx", entry->value.file_no);
 
-	EXTENTS_FOREACH(ext, entry->value.extents) {
-		char *ptr = (char *)ext.ptr;
-		size_t len = ext.size;
-
-		if (offset) {
-			if (offset > ext.size) {
-				offset -= ext.size;
-				continue;
-			}
-
-			ptr += offset;
-			len -= offset;
-			offset = 0;
-		}
-
-		size_t max_len = MIN(left_to_copy, vbufsize);
-		if (len > max_len)
-			len = max_len;
-
-		if (!no_memcpy)
-			memcpy(vbuf, ptr, len);
-
-		vbufsize -= len;
-		vbuf = (char *)vbuf + len;
-		copied += len;
-		left_to_copy -= len;
-
-		if (vbufsize == 0 || left_to_copy == 0)
-			return copied;
+	int fd = openat(dirfd, filename, O_RDONLY|O_CLOEXEC|__O_NOATIME);
+	if (fd == -1) {
+		LOG(1, "!open(read)");
+		return 0;
 	}
 
-	return copied;
+	ssize_t copied = pread(fd, vbuf, vbufsize, (off_t)offset);
+	if (copied < 0) {
+		int err = errno;
+		ERR("!pread");
+		close(fd);
+		errno = err;
+		return 0;
+	}
+
+	close(fd);
+
+	return (size_t)copied;
 }
 
 /*
@@ -506,7 +407,9 @@ vmemcache_entry_release(VMEMcache *cache, struct cache_entry *entry)
 	VALGRIND_ANNOTATE_HAPPENS_AFTER(&entry->value.refcount);
 	VALGRIND_ANNOTATE_HAPPENS_BEFORE_FORGET_ALL(&entry->value.refcount);
 
-	vmcache_free(cache->heap, entry->value.extents);
+	char filename[20];
+	snprintf(filename, sizeof(filename), "vmc%llx", entry->value.file_no);
+	unlinkat(cache->dirfd, filename, 0);
 
 	Free(entry);
 }
@@ -562,8 +465,8 @@ vmemcache_get(VMEMcache *cache, const void *key, size_t ksize, void *vbuf,
 	if (cache->no_alloc)
 		goto get_index;
 
-	read = vmemcache_populate_value(vbuf, vbufsize, offset, entry,
-		cache->no_memcpy);
+	read = vmemcache_populate_value(cache->dirfd, vbuf, vbufsize, offset,
+		entry, cache->no_memcpy);
 	if (vsize)
 		*vsize = entry->value.vsize;
 
@@ -729,10 +632,8 @@ vmemcache_get_stat(VMEMcache *cache, enum vmemcache_statistic stat,
 				VMEMCACHE_STAT_ENTRIES);
 		break;
 	case VMEMCACHE_STAT_POOL_SIZE_USED:
-		*val = vmcache_get_heap_used_size(cache->heap);
 		break;
 	case VMEMCACHE_STAT_HEAP_ENTRIES:
-		*val = vmcache_get_heap_entries_count(cache->heap);
 		break;
 	default:
 		ERR("unknown value of statistic: %u", stat);
@@ -741,19 +642,6 @@ vmemcache_get_stat(VMEMcache *cache, enum vmemcache_statistic stat,
 	}
 
 	return 0;
-}
-
-static void
-prefault(VMEMcache *cache)
-{
-	char *p = cache->addr;
-	char *limit = (char *)cache->addr + cache->size;
-
-	while (p < limit) {
-		*(volatile char *)p = *p;
-
-		p += 4096; /* once per page is enough */
-	}
 }
 
 /*
@@ -772,7 +660,6 @@ vmemcache_bench_set(VMEMcache *cache, enum vmemcache_bench_cfg cfg, size_t val)
 		cache->no_memcpy = !!val;
 		break;
 	case VMEMCACHE_BENCH_PREFAULT:
-		prefault(cache);
 		break;
 	default:
 		ERR("invalid config parameter: %u", cfg);

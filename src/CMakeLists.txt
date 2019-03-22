@@ -44,13 +44,10 @@ set(SOURCES
 	file.c
 	file_posix.c
 	fast-hash.c
-	mmap.c
-	mmap_posix.c
 	libvmemcache.c
 	critnib.c
 	ringbuf.c
 	vmemcache.c
-	vmemcache_heap.c
 	vmemcache_index.c
 	vmemcache_repl.c)
 

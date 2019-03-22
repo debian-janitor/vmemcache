@@ -39,7 +39,6 @@
 
 #include "util.h"
 #include "out.h"
-#include "mmap.h"
 
 #ifdef __cplusplus
 extern "C" {
