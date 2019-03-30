@@ -1,0 +1,13 @@
+Test-Command: gcc -Wall -o "$AUTOPKGTEST_TMP"/example tests/example.c -lvmemcache && "$AUTOPKGTEST_TMP"/example
+Features: test-name=gcc
+Depends: gcc, libc-dev, make, libvmemcache-dev
+
+Test-Command: clang -Wall -o "$AUTOPKGTEST_TMP"/example tests/example.c -lvmemcache && "$AUTOPKGTEST_TMP"/example
+Features: test-name=clang
+Depends: clang, libc-dev, make, libvmemcache-dev
+Restrictions: skip-not-installable
+
+Test-Command: tcc -Wall -o "$AUTOPKGTEST_TMP"/example tests/example.c -lvmemcache && "$AUTOPKGTEST_TMP"/example
+Features: test-name=tcc
+Depends: tcc, libc-dev, make, libvmemcache-dev
+Restrictions: skip-not-installable
