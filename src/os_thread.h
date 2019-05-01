@@ -40,54 +40,25 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef union {
-	long long align;
-	char padding[44]; /* linux: 40 windows: 44 */
-} os_mutex_t;
+typedef pthread_mutex_t os_mutex_t;
+typedef pthread_rwlock_t os_rwlock_t;
+typedef pthread_cond_t os_cond_t;
+typedef pthread_t os_thread_t;
+typedef pthread_once_t os_once_t;
 
-typedef union {
-	long long align;
-	char padding[56]; /* linux: 56 windows: 13 */
-} os_rwlock_t;
-
-typedef union {
-	long long align;
-	char padding[48]; /* linux: 48 windows: 12 */
-} os_cond_t;
-
-typedef union {
-	long long align;
-	char padding[32]; /* linux: 8 windows: 32 */
-} os_thread_t;
-
-typedef union {
-	long long align;  /* linux: long windows: 8 FreeBSD: 12 */
-	char padding[16]; /* 16 to be safe */
-} os_once_t;
-
-#define OS_ONCE_INIT { .padding = {0} }
+#define OS_ONCE_INIT {0}
 
 typedef unsigned os_tls_key_t;
-
-typedef union {
-	long long align;
-	char padding[56];  /* linux: 56 windows: 8 */
-} os_semaphore_t;
-
-typedef union {
-	long long align;
-	char padding[56];  /* linux: 56 windows: 8 */
-} os_thread_attr_t;
-
-typedef union {
-	long long align;
-	char padding[512];
-} os_cpu_set_t;
+typedef sem_t os_semaphore_t;
+typedef pthread_attr_t os_thread_attr_t;
+typedef cpu_set_t os_cpu_set_t;
 
 #ifdef __FreeBSD__
 #define cpu_set_t cpuset_t
