@@ -737,7 +737,11 @@ main(int argc, const char **argv)
 	}
 
 	lotta_zeroes = mmap(NULL, max_size, PROT_READ,
-		MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+		MAP_PRIVATE | MAP_ANONYMOUS
+#ifdef MAP_POPULATE
+		| MAP_POPULATE
+#endif
+		, -1, 0);
 	if (!lotta_zeroes) {
 		UT_FATAL("couldn't grab a zero buffer: mmap failed: %s",
 			strerror(errno));

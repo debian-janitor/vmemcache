@@ -42,7 +42,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#ifdef linux
 #include <linux/fs.h>
+#endif
 
 #include "file.h"
 #include "mmap.h"
@@ -112,6 +114,7 @@ util_unmap(void *addr, size_t len)
 	return retval;
 }
 
+#ifdef linux
 /*
  * chattr -- (internal) set file attributes
  */
@@ -133,6 +136,7 @@ chattr(int fd, int set, int clear)
 		return;
 	}
 }
+#endif
 
 /*
  * util_map_tmpfile -- reserve space in an unlinked file and memory-map it
@@ -156,7 +160,9 @@ util_map_tmpfile(const char *dir, size_t size, size_t req_align)
 		goto err;
 	}
 
+#ifdef linux
 	chattr(fd, FS_NOCOW_FL, 0);
+#endif
 
 	if ((errno = os_posix_fallocate(fd, 0, (os_off_t)size)) != 0) {
 		ERR("!posix_fallocate");
