@@ -44,6 +44,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "file.h"
 #include "out.h"
 #include "os.h"
 #include "os_thread.h"

@@ -350,7 +350,7 @@ test_new_delete(const char *dir, const char *file, enum vmemcache_repl_p repl_p)
 	vmemcache_set_size(cache, VMEMCACHE_MIN_POOL);
 	vmemcache_set_extent_size(cache, VMEMCACHE_MIN_EXTENT);
 	vmemcache_set_eviction_policy(cache, repl_p);
-	char nonexistent[PATH_MAX];
+	char nonexistent[4096];
 	strcpy(nonexistent, dir);
 	strcat(nonexistent, "/nonexistent_dir");
 	if (!vmemcache_add(cache, nonexistent))

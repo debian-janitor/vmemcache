@@ -52,6 +52,10 @@ extern "C" {
 #define NAME_MAX _MAX_FNAME
 #endif
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 struct file_info {
 	char filename[NAME_MAX + 1];
 	int is_dir;

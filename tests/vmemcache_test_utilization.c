@@ -58,7 +58,7 @@ typedef struct {
 	size_t pool_size;
 	size_t extent_size;
 	size_t val_max;
-	char dir[PATH_MAX];
+	char dir[4096];
 	long seconds;
 } test_params;
 
