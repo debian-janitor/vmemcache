@@ -322,9 +322,12 @@ test_new_delete(const char *dir, const char *file, enum vmemcache_repl_p repl_p)
 			"vmemcache_new did not fail with a file instead of a directory");
 
 #define ERR_MSG_1 "open: Not a directory"
-	if (strcmp(vmemcache_errormsg(), ERR_MSG_1))
+#define ERR_MSG_1bsd "mkstemp: Not a directory"
+	if (strcmp(vmemcache_errormsg(), ERR_MSG_1)
+		&& strcmp(vmemcache_errormsg(), ERR_MSG_1bsd)) {
 		UT_FATAL("wrong error message: '%s' (should be '"ERR_MSG_1"')",
 			vmemcache_errormsg());
+	}
 	vmemcache_delete(cache);
 
 	/* TEST #11 - NULL directory path */
