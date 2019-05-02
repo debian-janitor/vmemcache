@@ -1,3 +1,12 @@
+vmemcache (0.8-3) unstable; urgency=medium
+
+  * Hard-code -latomic.
+  * Avoid some Linuxisms.
+  * Handle missing PATH_MAX.
+  * Don't assume hard-coded sizes of pthread types.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Thu, 02 May 2019 17:31:06 +0200
+
 vmemcache (0.8-2) unstable; urgency=medium
 
   * Unbreak tests on 32-bit archs.
