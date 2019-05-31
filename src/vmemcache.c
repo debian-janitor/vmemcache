@@ -76,6 +76,7 @@ vmemcache_new()
 
 	cache->repl_p = VMEMCACHE_REPLACEMENT_LRU;
 	cache->extent_size = VMEMCACHE_MIN_EXTENT;
+	cache->fd = -1;
 
 	return cache;
 }
@@ -237,7 +238,8 @@ vmemcache_addU(VMEMcache *cache, const char *dir)
 		 * XXX: file should be mapped on-demand during allocation,
 		 *      up to cache->size
 		 */
-		cache->addr = util_map_tmpfile(dir, cache->size, 4 * MEGABYTE);
+		cache->addr = util_map_tmpfile(dir, cache->size, 4 * MEGABYTE,
+			&cache->fd);
 		if (cache->addr == NULL) {
 			LOG(1, "mapping of a temporary file failed");
 			return -1;
@@ -312,7 +314,7 @@ vmemcache_delete(VMEMcache *cache)
  */
 static void
 vmemcache_populate_extents(struct cache_entry *entry,
-				const void *value, size_t value_size)
+			const void *value, size_t value_size, VMEMcache *cache)
 {
 	struct extent ext;
 	size_t size_left = value_size;
@@ -320,7 +322,10 @@ vmemcache_populate_extents(struct cache_entry *entry,
 	EXTENTS_FOREACH(ext, entry->value.extents) {
 		ASSERT(size_left > 0);
 		size_t len = (ext.size < size_left) ? ext.size : size_left;
-		memcpy(ext.ptr, value, len);
+		if (len >= 65536 && cache->fd != -1)
+			pwrite(cache->fd, value, len, (char*)ext.ptr - (char*)cache->addr);
+		else
+			memcpy(ext.ptr, value, len);
 		value = (char *)value + len;
 		size_left -= len;
 	}
@@ -406,7 +411,7 @@ vmemcache_put(VMEMcache *cache, const void *key, size_t ksize,
 	if (cache->no_memcpy)
 		entry->value.vsize = value_size;
 	else
-		vmemcache_populate_extents(entry, value, value_size);
+		vmemcache_populate_extents(entry, value, value_size, cache);
 
 put_index:
 	if (vmcache_index_insert(cache->index, entry)) {

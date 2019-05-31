@@ -140,7 +140,7 @@ chattr(int fd, int set, int clear)
  * size must be multiple of page size.
  */
 void *
-util_map_tmpfile(const char *dir, size_t size, size_t req_align)
+util_map_tmpfile(const char *dir, size_t size, size_t req_align, int *f)
 {
 	int oerrno;
 
@@ -170,7 +170,10 @@ util_map_tmpfile(const char *dir, size_t size, size_t req_align)
 		goto err;
 	}
 
-	(void) os_close(fd);
+	if (f)
+		*f = fd;
+	else
+		(void) os_close(fd);
 	return base;
 
 err:
