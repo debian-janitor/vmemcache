@@ -1,3 +1,10 @@
+vmemcache (0.8-4) unstable; urgency=medium
+
+  * Install the man page.
+  * Fix an intermittent test failure on 32-bit.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Fri, 19 Jul 2019 01:45:46 +0200
+
 vmemcache (0.8-3) unstable; urgency=medium
 
   * Hard-code -latomic.
