@@ -7,6 +7,7 @@ libvmemcache.so.0 libvmemcache0 #MINVER#
  vmemcache_delete@LIBVMEMCACHE_1.0 0
  vmemcache_errormsg@LIBVMEMCACHE_1.0 0
  vmemcache_evict@LIBVMEMCACHE_1.0 0
+ vmemcache_exists@LIBVMEMCACHE_1.0 0.8.1
  vmemcache_get@LIBVMEMCACHE_1.0 0
  vmemcache_get_stat@LIBVMEMCACHE_1.0 0
  vmemcache_new@LIBVMEMCACHE_1.0 0
