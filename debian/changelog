@@ -1,3 +1,11 @@
+vmemcache (0.8.1-1) unstable; urgency=medium
+
+  * New upstream point release.
+  * dh 12.
+  * Add vmemcache_exists to symbols.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 21 Oct 2020 16:10:17 +0200
+
 vmemcache (0.8-4) unstable; urgency=medium
 
   * Install the man page.
