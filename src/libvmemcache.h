@@ -1,42 +1,10 @@
-/*
- * Copyright 2018-2019, Intel Corporation
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in
- *       the documentation and/or other materials provided with the
- *       distribution.
- *
- *     * Neither the name of the copyright holder nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+/* Copyright 2018-2019, Intel Corporation */
 
 /*
  * libvmemcache.h -- definitions of libvmemcache entry points
  *
  * This library provides near-zero waste volatile caching.
- *
- * WARNING: this library is in a 'Work-In-Progress' state,
- *          API is not stable and it may change at any time.
  */
 
 #ifndef LIBVMEMCACHE_H
@@ -97,7 +65,8 @@ enum vmemcache_statistic {
 	VMEMCACHE_STAT_DRAM_SIZE_USED,	/* current size of DRAM used for keys */
 	VMEMCACHE_STAT_POOL_SIZE_USED,	/* current size of memory pool */
 					/*    used for values */
-	VMEMCACHE_STAT_HEAP_ENTRIES,	/* current number of heap entries */
+	VMEMCACHE_STAT_HEAP_ENTRIES,	/* current number of allocator heap */
+					/*    entries */
 	VMEMCACHE_STATS_NUM		/* total number of statistics */
 };
 
@@ -144,6 +113,9 @@ vmemcache_get(VMEMcache *cache,
 	size_t vbufsize, /* size of vbuf */
 	size_t offset, /* offset inside of value from which to begin copying */
 	size_t *vsize /* real size of the object */);
+
+int vmemcache_exists(VMEMcache *cache,
+	const void *key, size_t key_size, size_t *vsize);
 
 int vmemcache_put(VMEMcache *cache,
 	const void *key, size_t key_size,

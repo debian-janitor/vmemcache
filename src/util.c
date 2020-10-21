@@ -1,34 +1,5 @@
-/*
- * Copyright 2014-2019, Intel Corporation
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in
- *       the documentation and/or other materials provided with the
- *       distribution.
- *
- *     * Neither the name of the copyright holder nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+/* Copyright 2014-2020, Intel Corporation */
 
 /*
  * util.c -- very basic utilities
@@ -52,20 +23,20 @@ unsigned long long Pagesize;
 /* allocation/mmap granularity */
 unsigned long long Mmap_align;
 
-/*
- * our versions of malloc & friends start off pointing to the libc versions
- */
-Malloc_func Malloc = malloc;
-Free_func Free = free;
-Realloc_func Realloc = realloc;
-Strdup_func Strdup = strdup;
+#define GCC_VERSION (__GNUC__ * 10000 \
+		+ __GNUC_MINOR__ * 100 \
+		+ __GNUC_PATCHLEVEL__)
 
 /*
  * Zalloc -- allocate zeroed memory
  */
 void *
+#if GCC_VERSION >= 40400
+__attribute__((optimize(0)))
+#endif
 Zalloc(size_t sz)
 {
+	/* gcc likes to replace this function as calloc() if optimizing */
 	void *ret = Malloc(sz);
 	if (!ret)
 		return NULL;
@@ -222,21 +193,6 @@ util_checksum_seq(const void *addr, size_t len, uint64_t csum)
 		hi32 += lo32;
 	}
 	return (uint64_t)hi32 << 32 | lo32;
-}
-
-/*
- * util_set_alloc_funcs -- allow one to override malloc, etc.
- */
-void
-util_set_alloc_funcs(void *(*malloc_func)(size_t size),
-		void (*free_func)(void *ptr),
-		void *(*realloc_func)(void *ptr, size_t size),
-		char *(*strdup_func)(const char *s))
-{
-	Malloc = (malloc_func == NULL) ? malloc : malloc_func;
-	Free = (free_func == NULL) ? free : free_func;
-	Realloc = (realloc_func == NULL) ? realloc : realloc_func;
-	Strdup = (strdup_func == NULL) ? strdup : strdup_func;
 }
 
 /*

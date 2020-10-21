@@ -76,15 +76,10 @@ extern unsigned long long Mmap_align;
 /*
  * overridable names for malloc & friends used by this library
  */
-typedef void *(*Malloc_func)(size_t size);
-typedef void (*Free_func)(void *ptr);
-typedef void *(*Realloc_func)(void *ptr, size_t size);
-typedef char *(*Strdup_func)(const char *s);
-
-extern Malloc_func Malloc;
-extern Free_func Free;
-extern Realloc_func Realloc;
-extern Strdup_func Strdup;
+#define Malloc malloc
+#define Free free
+#define Realloc realloc
+#define Strdup strdup
 extern void *Zalloc(size_t sz);
 
 void util_init(void);
@@ -117,12 +112,6 @@ int util_toUTF8_buff(const wchar_t *in, char *out, size_t out_size);
 
 #define UTIL_MAX_ERR_MSG 128
 void util_strerror(int errnum, char *buff, size_t bufflen);
-
-void util_set_alloc_funcs(
-		void *(*malloc_func)(size_t size),
-		void (*free_func)(void *ptr),
-		void *(*realloc_func)(void *ptr, size_t size),
-		char *(*strdup_func)(const char *s));
 
 /*
  * Macro calculates number of elements in given table
@@ -251,14 +240,22 @@ typedef enum {
 #define util_bool_compare_and_swap64 __sync_bool_compare_and_swap
 #define util_val_compare_and_swap32 __sync_val_compare_and_swap
 #define util_val_compare_and_swap64 __sync_val_compare_and_swap
-#define util_fetch_and_add32(ptr,val) __atomic_fetch_add(ptr, val, __ATOMIC_SEQ_CST)
-#define util_fetch_and_add64(ptr,val) __atomic_fetch_add(ptr, val, __ATOMIC_SEQ_CST)
-#define util_fetch_and_sub32(ptr,val) __atomic_fetch_sub(ptr, val, __ATOMIC_SEQ_CST)
-#define util_fetch_and_sub64(ptr,val) __atomic_fetch_sub(ptr, val, __ATOMIC_SEQ_CST)
-#define util_fetch_and_and32(ptr,val) __atomic_fetch_and(ptr, val, __ATOMIC_SEQ_CST)
-#define util_fetch_and_and64(ptr,val) __atomic_fetch_and(ptr, val, __ATOMIC_SEQ_CST)
-#define util_fetch_and_or32(ptr,val) __atomic_fetch_or(ptr, val, __ATOMIC_SEQ_CST)
-#define util_fetch_and_or64(ptr,val) __atomic_fetch_or(ptr, val, __ATOMIC_SEQ_CST)
+#define util_fetch_and_add32(ptr, val) __atomic_fetch_add(ptr, val, \
+	__ATOMIC_SEQ_CST)
+#define util_fetch_and_add64(ptr, val) __atomic_fetch_add(ptr, val, \
+	__ATOMIC_SEQ_CST)
+#define util_fetch_and_sub32(ptr, val) __atomic_fetch_sub(ptr, val, \
+	__ATOMIC_SEQ_CST)
+#define util_fetch_and_sub64(ptr, val) __atomic_fetch_sub(ptr, val, \
+	__ATOMIC_SEQ_CST)
+#define util_fetch_and_and32(ptr, val) __atomic_fetch_and(ptr, val, \
+	__ATOMIC_SEQ_CST)
+#define util_fetch_and_and64(ptr, val) __atomic_fetch_and(ptr, val, \
+	__ATOMIC_SEQ_CST)
+#define util_fetch_and_or32(ptr, val) __atomic_fetch_or(ptr, val, \
+	__ATOMIC_SEQ_CST)
+#define util_fetch_and_or64(ptr, val) __atomic_fetch_or(ptr, val, \
+	__ATOMIC_SEQ_CST)
 #define util_synchronize __sync_synchronize
 #define util_popcount(value) ((unsigned char)__builtin_popcount(value))
 #define util_popcount64(value) ((unsigned char)__builtin_popcountll(value))

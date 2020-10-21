@@ -5,6 +5,6 @@ include(${SRC_DIR}/helpers.cmake)
 
 setup()
 
-execute(0 ${TEST_DIR}/example)
+execute(0 ${TEST_DIR}/twolevel ${TEST_POOL_LOCATION} ${TEST_POOL_LOCATION})
 
 cleanup()
