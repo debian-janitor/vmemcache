@@ -1,0 +1,5 @@
+{
+    <fast-hash slices by 8 bytes even on 32-bit>
+    Memcheck:Addr4
+    fun:hash
+}
