@@ -1,3 +1,10 @@
+vmemcache (0.8.1-2) unstable; urgency=medium
+
+  * Fix FTBFS on 32-bit and bad-endian.
+  * Fix -latomic linkage (closes: #972967), thanks Adrian Bunk.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Wed, 11 Nov 2020 00:04:28 +0100
+
 vmemcache (0.8.1-1) unstable; urgency=medium
 
   * New upstream point release.
