@@ -6,7 +6,7 @@ Build-Depends:
 	debhelper-compat (= 12),
 	pandoc,
 	pkg-config,
-	valgrind [amd64 arm64 armhf i386 mips64 mips64el powerpc ppc64el x32]
+	valgrind [amd64 arm64 armhf i386 powerpc ppc64el x32]
 Standards-Version: 4.5.0
 Section: libs
 Homepage: https://github.com/pmem/vmemcache
