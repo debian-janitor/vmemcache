@@ -3,3 +3,9 @@
     Memcheck:Addr4
     fun:hash
 }
+{
+    <... and is possibly rotated on bad-endian>
+    Memcheck:Addr4
+    fun:__bswap_64
+    fun:hash
+}
