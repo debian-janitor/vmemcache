@@ -15,7 +15,7 @@ Vcs-Git: https://github.com/kilobyte/vmemcache -b debian
 
 Package: libvmemcache-dev
 Section: libdevel
-Architecture: any
+Architecture: amd64 arm64 ppc64el mips64el s390x alpha ia64 ppc64 riscv64 sparc64
 Multi-Arch: same
 Depends: libvmemcache0 (= ${binary:Version}), ${misc:Depends}
 Description: buffer-based LRU cache
@@ -26,7 +26,7 @@ Description: buffer-based LRU cache
  This package contains development headers and documentation.
 
 Package: libvmemcache0
-Architecture: any
+Architecture: amd64 arm64 ppc64el mips64el s390x alpha ia64 ppc64 riscv64 sparc64
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: buffer-based LRU cache
