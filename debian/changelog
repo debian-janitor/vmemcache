@@ -1,3 +1,12 @@
+vmemcache (0.8.1-4) unstable; urgency=medium
+
+  * Give up trying to support 32-bit.  There's no pmem hardware there,
+    and won't ever be.  The library is meant for multi-terabyte datasets
+    (or shards of even bigger stuff), so 32-bit chroots make little sense,
+    either.
+
+ -- Adam Borowski <kilobyte@angband.pl>  Fri, 20 Nov 2020 07:04:46 +0100
+
 vmemcache (0.8.1-3) unstable; urgency=medium
 
   * Disable valgrind tests on mips64* (fails on glibc code).
