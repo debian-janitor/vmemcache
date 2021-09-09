@@ -3,7 +3,7 @@ Priority: optional
 Maintainer: Adam Borowski <kilobyte@angband.pl>
 Build-Depends:
 	cmake,
-	debhelper-compat (= 12),
+	debhelper-compat (= 13),
 	pandoc,
 	pkg-config,
 	valgrind [amd64 arm64 armhf i386 powerpc ppc64el x32]
