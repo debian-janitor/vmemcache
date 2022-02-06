@@ -7,7 +7,7 @@ Build-Depends:
 	pandoc,
 	pkg-config,
 	valgrind [amd64 arm64 armhf i386 powerpc ppc64el x32]
-Standards-Version: 4.5.0
+Standards-Version: 4.6.0
 Section: libs
 Homepage: https://github.com/pmem/vmemcache
 Vcs-Browser: https://github.com/kilobyte/vmemcache/tree/debian
