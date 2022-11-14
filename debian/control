@@ -11,7 +11,7 @@ Standards-Version: 4.6.0
 Section: libs
 Homepage: https://github.com/pmem/vmemcache
 Vcs-Browser: https://github.com/kilobyte/vmemcache/tree/debian
-Vcs-Git: https://github.com/kilobyte/vmemcache -b debian
+Vcs-Git: https://github.com/kilobyte/vmemcache.git -b debian
 
 Package: libvmemcache-dev
 Section: libdevel
